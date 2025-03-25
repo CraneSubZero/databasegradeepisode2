@@ -63,12 +63,50 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 // Function to insert detailed grade components
 function insertDetailedGrade($conn, $gradeId, $term, $assignment, $quiz, $seatwork, $participation, $projects, $lab, $exam) {
+    // Debug: Print out all parameters to verify
+    error_log("Inserting Detailed Grade - GradeID: $gradeId, Term: $term, Assign: $assignment, Quiz: $quiz, Seatwork: $seatwork, Participation: $participation, Projects: $projects, Lab: $lab, Exam: $exam");
+
     $sql = "INSERT INTO DetailedGrades (GradeID, Term, Assignment, Quiz, Seatwork, Participation, Projects, LabExercises, WrittenExam) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
     
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("isdddddd", $gradeId, $term, $assignment, $quiz, $seatwork, $participation, $projects, $lab, $exam);
-    $stmt->execute();
+    if ($stmt === false) {
+        // Log prepare error
+        error_log("Prepare failed: " . $conn->error);
+        return false;
+    }
+
+    // Ensure all values are numeric and not null
+    $assignment = floatval($assignment);
+    $quiz = floatval($quiz);
+    $seatwork = floatval($seatwork);
+    $participation = floatval($participation);
+    $projects = floatval($projects);
+    $lab = floatval($lab);
+    $exam = floatval($exam);
+
+    // Bind parameters with explicit type casting
+    $stmt->bind_param("isddddddd", 
+        $gradeId, 
+        $term, 
+        $assignment, 
+        $quiz, 
+        $seatwork, 
+        $participation, 
+        $projects, 
+        $lab, 
+        $exam
+    );
+
+    // Execute and check for errors
+    $result = $stmt->execute();
+    if ($result === false) {
+        // Log execution error
+        error_log("Execute failed: " . $stmt->error);
+        return false;
+    }
+
+    return true;
 }
 
 // Get all students, courses, and faculty for dropdowns
